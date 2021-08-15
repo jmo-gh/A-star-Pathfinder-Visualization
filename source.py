@@ -1,7 +1,7 @@
 import pygame
 import math
+import random
 from queue import PriorityQueue
-
 
 # setup display
 WIDTH = 800
@@ -89,7 +89,7 @@ class Node:
         if self.col < self.total_rows - 1 and not grid[self.row][self.col + 1].is_barrier(): # RIGHT
             self.neighbors.append(grid[self.row][self.col + 1])
 
-        if self.row > 0 and not grid[self.row][self.col - 1].is_barrier(): # LEFT
+        if self.col > 0 and not grid[self.row][self.col - 1].is_barrier(): # LEFT
             self.neighbors.append(grid[self.row][self.col - 1])
 
     def __lt__(self, other):
@@ -169,6 +169,17 @@ def make_grid(rows, width):
     return grid
 
 
+def ran_maze(grid, rows, width):
+
+    for row in grid:
+        for node in row:
+            num = random.randint(1,10)
+            if num < 4 and not node.is_start() and not node.is_end():
+                node.make_barrier()
+
+    pygame.display.update()
+
+
 def draw_grid(win, rows, width):
     gap = width // rows
     for i in range(rows):
@@ -217,7 +228,8 @@ def main(win, width):
             if started:
                 continue
 
-            if pygame.mouse.get_pressed()[0]: # LMB
+            # draw barriers
+            if pygame.mouse.get_pressed()[0]: # 'LMB'
                 pos = pygame.mouse.get_pos()
                 row, col = get_clicked_pos(pos, ROWS, width)
                 node = grid[row][col]
@@ -233,7 +245,8 @@ def main(win, width):
                 elif node != end and node != start:
                     node.make_barrier()
 
-            elif pygame.mouse.get_pressed()[2]: # RMB
+            # reset node
+            elif pygame.mouse.get_pressed()[2]: # 'RMB'
                 pos = pygame.mouse.get_pos()
                 row, col = get_clicked_pos(pos, ROWS, width)
                 node = grid[row][col]
@@ -245,7 +258,8 @@ def main(win, width):
                 if node == end:
                     end = None
 
-            if event.type == pygame.KEYDOWN:
+            # start A* algorithm
+            if event.type == pygame.KEYDOWN:  # 'space'
                 if event.key == pygame.K_SPACE and not started:
                     for row in grid:
                         for node in row:
@@ -253,9 +267,26 @@ def main(win, width):
 
                     algorithm(lambda: draw(win, grid, ROWS, width), grid, start, end)
 
-                if event.key == pygame.K_c:
+                if event.key == pygame.K_c: # 'space' then 'c'
                     start = None
                     end = None
+                    grid = make_grid(ROWS, width)
+
+            # generate random barrier
+            if event.type == pygame.KEYDOWN: # 'r'
+                if event.key == pygame.K_r:
+                    ran_maze(grid, ROWS, width)
+
+            # zoom out, add rows
+            if event.type == pygame.KEYDOWN: # 'arrow_up'
+                if event.key == pygame.K_UP:
+                    ROWS += 5
+                    grid = make_grid(ROWS, width)
+
+            # zoom in, remove rows
+            if event.type == pygame.KEYDOWN: # 'arrow_down'
+                if event.key == pygame.K_DOWN:
+                    ROWS -= 5
                     grid = make_grid(ROWS, width)
 
     pygame.quit()
