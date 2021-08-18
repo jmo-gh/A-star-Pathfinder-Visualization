@@ -113,22 +113,38 @@ def algorithm(draw, grid, start, end):
     count = 0
     open_set = PriorityQueue()
     open_set.put((0, count, start))
+
+    # dictionary to keep track of previous steps
     came_from = {}
+
+    # initialize g_scores of every node to infinity
     g_score = {node: float("inf") for row in grid for node in row}
+
+    # g_score of start node = 0
     g_score[start] = 0
+
+    # initialize f_scores of every node to infinity
     f_score = {node: float("inf") for row in grid for node in row}
+
+    # f_score of start node is the heuristic
     f_score[start] = h(start.get_pos(), end.get_pos())
 
+    # keep track of items in/out of priority queue
     open_set_hash = {start}
 
+    # run until open_set is empty
     while not open_set.empty():
-        for event in pygame.event.get():
+        for event in pygame.event.get():    # exit loop, just in case
             if event.type == pygame.QUIT:
                 pygame.quit()
 
+        # pop the lowest value f_score in queue
         current = open_set.get()[2]
+
+        # remove from hash, no duplicates
         open_set_hash.remove(current)
 
+        # if we reached the end node, reconstruct path
         if current == end:
             reconstruct_path(came_from, end, draw)
             end.make_end()
@@ -136,25 +152,36 @@ def algorithm(draw, grid, start, end):
             return True
 
         for neighbor in current.neighbors:
+            # moving one node over can only increase g_score by 1
             temp_g_score = g_score[current] + 1
 
+            # if we found a better way to the end node, update values
             if temp_g_score < g_score[neighbor]:
                 came_from[neighbor] = current
                 g_score[neighbor] = temp_g_score
+
+                # f_score is sum of g_score and heuristic
                 f_score[neighbor] = temp_g_score + h(neighbor.get_pos(), end.get_pos())
 
+                # if neighbor is not in the queue
                 if neighbor not in open_set_hash:
                     count += 1
+
+                    # put neighbor in to consider for path
                     open_set.put((f_score[neighbor], count, neighbor))
                     open_set_hash.add(neighbor)
+
+                    # change color of neighbor to green, in open set
                     neighbor.make_open()
 
         draw()
 
         if current != start:
+            # change color of current node to red, remove from open set
             current.make_closed()
 
     return False
+
 
 def make_grid(rows, width):
     grid = []
@@ -229,7 +256,7 @@ def main(win, width):
                 continue
 
             # draw barriers
-            if pygame.mouse.get_pressed()[0]: # 'LMB'
+            if pygame.mouse.get_pressed()[0]:  # 'LMB'
                 pos = pygame.mouse.get_pos()
                 row, col = get_clicked_pos(pos, ROWS, width)
                 node = grid[row][col]
@@ -246,7 +273,7 @@ def main(win, width):
                     node.make_barrier()
 
             # reset node
-            elif pygame.mouse.get_pressed()[2]: # 'RMB'
+            elif pygame.mouse.get_pressed()[2]:  # 'RMB'
                 pos = pygame.mouse.get_pos()
                 row, col = get_clicked_pos(pos, ROWS, width)
                 node = grid[row][col]
@@ -273,21 +300,9 @@ def main(win, width):
                     grid = make_grid(ROWS, width)
 
             # generate random barrier
-            if event.type == pygame.KEYDOWN: # 'r'
+            if event.type == pygame.KEYDOWN:  # 'r'
                 if event.key == pygame.K_r:
                     ran_maze(grid, ROWS, width)
-
-            # zoom out, add rows
-            if event.type == pygame.KEYDOWN: # 'arrow_up'
-                if event.key == pygame.K_UP:
-                    ROWS += 5
-                    grid = make_grid(ROWS, width)
-
-            # zoom in, remove rows
-            if event.type == pygame.KEYDOWN: # 'arrow_down'
-                if event.key == pygame.K_DOWN:
-                    ROWS -= 5
-                    grid = make_grid(ROWS, width)
 
     pygame.quit()
 
